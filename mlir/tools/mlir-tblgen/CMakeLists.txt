@@ -20,6 +20,7 @@ add_tablegen(mlir-tblgen MLIR
   LLVMIRIntrinsicGen.cpp
   mlir-tblgen.cpp
   OmpOpGen.cpp
+  OpCAPIGen.cpp
   OpClass.cpp
   OpDefinitionsGen.cpp
   OpDocGen.cpp
