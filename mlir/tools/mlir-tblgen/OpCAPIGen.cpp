@@ -25,13 +25,19 @@ using namespace mlir::tblgen;
 static llvm::cl::OptionCategory
     opGenCat("Options for -gen-op-capi-header and -gen-op-capi-impl");
 
-static llvm::cl::opt<std::string>
-    dialectName("dialect-name",
-                llvm::cl::desc("The dialect name to use for this group of ops. "
-                               "The form will be mlir<Dialect><Op><Accessor>, "
-                               "e.g., mlirMyDialectAddOpGetLhs. The dialect "
-                               "name helps avoid conflicts."),
-                llvm::cl::cat(opGenCat));
+static llvm::cl::opt<std::string> dialectName(
+    "dialect-name",
+    llvm::cl::desc("The dialect name to use for this group of ops. "
+                   "The form will be <prefix><Dialect><Op><Accessor>, "
+                   "e.g., mlirMyDialectAddOpGetLhs. The dialect "
+                   "name helps avoid conflicts."),
+    llvm::cl::cat(opGenCat));
+
+static llvm::cl::opt<std::string> functionPrefix(
+    "function-prefix",
+    llvm::cl::desc("The prefix to use for generated C API function names. "
+                   "Default is 'mlir'."),
+    llvm::cl::init("mlir"), llvm::cl::cat(opGenCat));
 
 static llvm::cl::opt<bool>
     genCreate("gen-create",
@@ -76,77 +82,77 @@ static llvm::cl::opt<bool>
 
 const char *const opDecl = R"(
 /* Create {0} Operation. */
-MLIR_CAPI_EXPORTED MlirOperation mlirCreate{0}{1}(MlirContext ctx, MlirLocation location{2});
+MLIR_CAPI_EXPORTED MlirOperation {1}Create{0}{2}(MlirContext ctx, MlirLocation location{3});
 )";
 
 const char *const operandGetterDecl = R"(
-/* Get {2} operand from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirValue mlir{0}{1}Get{2}(MlirOperation op);
+/* Get {3} operand from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {1}{0}{2}Get{3}(MlirOperation op);
 )";
 
 const char *const operandSetterDecl = R"(
-/* Set {2} operand of {0} Operation. */
-MLIR_CAPI_EXPORTED void mlir{0}{1}Set{2}(MlirOperation op, MlirValue value);
+/* Set {3} operand of {0} Operation. */
+MLIR_CAPI_EXPORTED void {1}{0}{2}Set{3}(MlirOperation op, MlirValue value);
 )";
 
 const char *const variadicOperandCountGetterDecl = R"(
-/* Get number of {2} operands in {0} Operation. */
-MLIR_CAPI_EXPORTED intptr_t mlir{0}{1}Get{2}Count(MlirOperation op);
+/* Get number of {3} operands in {0} Operation. */
+MLIR_CAPI_EXPORTED intptr_t {1}{0}{2}Get{3}Count(MlirOperation op);
 )";
 
 const char *const variadicOperandIndexedGetterDecl = R"(
-/* Get {2} operand at index from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirValue mlir{0}{1}Get{2}(MlirOperation op, intptr_t index);
+/* Get {3} operand at index from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {1}{0}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
 
 const char *const variadicOperandSetterDecl = R"(
-/* Set {2} operands of {0} Operation. */
-MLIR_CAPI_EXPORTED void mlir{0}{1}Set{2}(MlirOperation op, intptr_t count, MlirValue const *values);
+/* Set {3} operands of {0} Operation. */
+MLIR_CAPI_EXPORTED void {1}{0}{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values);
 )";
 
 const char *const attributeGetterDecl = R"(
-/* Get {2} attribute from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirAttribute mlir{0}{1}Get{2}(MlirOperation op);
+/* Get {3} attribute from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirAttribute {1}{0}{2}Get{3}(MlirOperation op);
 )";
 
 const char *const attributeSetterDecl = R"(
-/* Set {2} attribute of {0} Operation. */
-MLIR_CAPI_EXPORTED void mlir{0}{1}Set{2}(MlirOperation op, MlirAttribute attr);
+/* Set {3} attribute of {0} Operation. */
+MLIR_CAPI_EXPORTED void {1}{0}{2}Set{3}(MlirOperation op, MlirAttribute attr);
 )";
 
 const char *const resultGetterDecl = R"(
-/* Get {2} result from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirValue mlir{0}{1}Get{2}(MlirOperation op);
+/* Get {3} result from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {1}{0}{2}Get{3}(MlirOperation op);
 )";
 
 const char *const variadicResultCountGetterDecl = R"(
-/* Get number of {2} results in {0} Operation. */
-MLIR_CAPI_EXPORTED intptr_t mlir{0}{1}Get{2}Count(MlirOperation op);
+/* Get number of {3} results in {0} Operation. */
+MLIR_CAPI_EXPORTED intptr_t {1}{0}{2}Get{3}Count(MlirOperation op);
 )";
 
 const char *const variadicResultIndexedGetterDecl = R"(
-/* Get {2} result at index from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirValue mlir{0}{1}Get{2}(MlirOperation op, intptr_t index);
+/* Get {3} result at index from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirValue {1}{0}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
 
 const char *const regionGetterDecl = R"(
-/* Get {2} region from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirRegion mlir{0}{1}Get{2}(MlirOperation op);
+/* Get {3} region from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirRegion {1}{0}{2}Get{3}(MlirOperation op);
 )";
 
 const char *const variadicRegionCountGetterDecl = R"(
-/* Get number of {2} regions in {0} Operation. */
-MLIR_CAPI_EXPORTED intptr_t mlir{0}{1}Get{2}Count(MlirOperation op);
+/* Get number of {3} regions in {0} Operation. */
+MLIR_CAPI_EXPORTED intptr_t {1}{0}{2}Get{3}Count(MlirOperation op);
 )";
 
 const char *const variadicRegionIndexedGetterDecl = R"(
-/* Get {2} region at index from {0} Operation. */
-MLIR_CAPI_EXPORTED MlirRegion mlir{0}{1}Get{2}(MlirOperation op, intptr_t index);
+/* Get {3} region at index from {0} Operation. */
+MLIR_CAPI_EXPORTED MlirRegion {1}{0}{2}Get{3}(MlirOperation op, intptr_t index);
 )";
 
 const char *const extraMethodDecl = R"(
 /* {0} */
-MLIR_CAPI_EXPORTED {1} mlir{2}{3}{4}(MlirOperation op);
+MLIR_CAPI_EXPORTED {1} {2}{3}{4}{5}(MlirOperation op);
 )";
 
 const char *const fileHeader = R"(
@@ -606,7 +612,7 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
 
     // Generate create function
     if (genCreate)
-      os << llvm::formatv(opDecl, dialectName, opName, params);
+      os << llvm::formatv(opDecl, dialectName, functionPrefix, opName, params);
 
     // Generate operand getters and setters
     for (int i = 0, e = op.getNumOperands(); i < e; ++i) {
@@ -614,21 +620,21 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
       std::string capitalizedName = toCamelCase(operand.name);
       if (!operand.isVariadic()) {
         if (genOperandGetters)
-          os << llvm::formatv(operandGetterDecl, dialectName, opName,
-                              capitalizedName);
+          os << llvm::formatv(operandGetterDecl, dialectName, functionPrefix,
+                              opName, capitalizedName);
         if (genOperandSetters)
-          os << llvm::formatv(operandSetterDecl, dialectName, opName,
-                              capitalizedName);
+          os << llvm::formatv(operandSetterDecl, dialectName, functionPrefix,
+                              opName, capitalizedName);
       } else {
         if (genOperandGetters) {
           os << llvm::formatv(variadicOperandCountGetterDecl, dialectName,
-                              opName, capitalizedName);
+                              functionPrefix, opName, capitalizedName);
           os << llvm::formatv(variadicOperandIndexedGetterDecl, dialectName,
-                              opName, capitalizedName);
+                              functionPrefix, opName, capitalizedName);
         }
         if (genOperandSetters) {
-          os << llvm::formatv(variadicOperandSetterDecl, dialectName, opName,
-                              capitalizedName);
+          os << llvm::formatv(variadicOperandSetterDecl, dialectName,
+                              functionPrefix, opName, capitalizedName);
         }
       }
     }
@@ -637,11 +643,11 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
     for (const auto &namedAttr : op.getAttributes()) {
       std::string capitalizedName = toCamelCase(namedAttr.name);
       if (genAttributeGetters)
-        os << llvm::formatv(attributeGetterDecl, dialectName, opName,
-                            capitalizedName);
+        os << llvm::formatv(attributeGetterDecl, dialectName, functionPrefix,
+                            opName, capitalizedName);
       if (genAttributeSetters)
-        os << llvm::formatv(attributeSetterDecl, dialectName, opName,
-                            capitalizedName);
+        os << llvm::formatv(attributeSetterDecl, dialectName, functionPrefix,
+                            opName, capitalizedName);
     }
 
     // Generate result getters
@@ -653,13 +659,13 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
                                      : result.name.str();
         std::string capitalizedName = toCamelCase(resultName);
         if (!result.isVariadic()) {
-          os << llvm::formatv(resultGetterDecl, dialectName, opName,
-                              capitalizedName);
+          os << llvm::formatv(resultGetterDecl, dialectName, functionPrefix,
+                              opName, capitalizedName);
         } else {
           os << llvm::formatv(variadicResultCountGetterDecl, dialectName,
-                              opName, capitalizedName);
+                              functionPrefix, opName, capitalizedName);
           os << llvm::formatv(variadicResultIndexedGetterDecl, dialectName,
-                              opName, capitalizedName);
+                              functionPrefix, opName, capitalizedName);
         }
       }
     }
@@ -673,13 +679,13 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
                                      : region.name.str();
         std::string capitalizedName = toCamelCase(regionName);
         if (!region.isVariadic()) {
-          os << llvm::formatv(regionGetterDecl, dialectName, opName,
-                              capitalizedName);
+          os << llvm::formatv(regionGetterDecl, dialectName, functionPrefix,
+                              opName, capitalizedName);
         } else {
           os << llvm::formatv(variadicRegionCountGetterDecl, dialectName,
-                              opName, capitalizedName);
+                              functionPrefix, opName, capitalizedName);
           os << llvm::formatv(variadicRegionIndexedGetterDecl, dialectName,
-                              opName, capitalizedName);
+                              functionPrefix, opName, capitalizedName);
         }
       }
     }
@@ -713,7 +719,8 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
                                        ? method.methodName
                                        : method.documentation;
           os << llvm::formatv(extraMethodDecl, docComment, capiReturnType,
-                              dialectName, opName, capitalizedMethodName);
+                              functionPrefix, dialectName, opName,
+                              capitalizedMethodName);
         }
       }
     }
@@ -724,41 +731,41 @@ static bool emitOpCAPIHeader(const llvm::RecordKeeper &records,
 }
 
 const char *const opCreateDef = R"(
-MlirOperation mlirCreate{0}{1}(MlirContext ctx, MlirLocation location{2}) {{
-  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString("{3}"), location);
-{4}
+MlirOperation {0}Create{1}{2}(MlirContext ctx, MlirLocation location{3}) {{
+  MlirOperationState state = mlirOperationStateGet(mlirStringRefCreateFromCString("{4}"), location);
+{5}
   return mlirOperationCreate(&state);
 }
 )";
 
 const char *const operandGetterDef = R"(
-MlirValue mlir{0}{1}Get{2}(MlirOperation op) {{
-  return mlirOperationGetOperand(op, {3});
+MlirValue {0}{1}{2}Get{3}(MlirOperation op) {{
+  return mlirOperationGetOperand(op, {4});
 }
 )";
 
 const char *const operandSetterDef = R"(
-void mlir{0}{1}Set{2}(MlirOperation op, MlirValue value) {{
-  mlirOperationSetOperand(op, {3}, value);
+void {0}{1}{2}Set{3}(MlirOperation op, MlirValue value) {{
+  mlirOperationSetOperand(op, {4}, value);
 }
 )";
 
 const char *const variadicOperandCountGetterDef = R"(
-intptr_t mlir{0}{1}Get{2}Count(MlirOperation op) {{
-  return {3} - {4};
+intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
+  return {4} - {5};
 }
 )";
 
 const char *const variadicOperandIndexedGetterDef = R"(
-MlirValue mlir{0}{1}Get{2}(MlirOperation op, intptr_t index) {{
-  return mlirOperationGetOperand(op, {3} + index);
+MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
+  return mlirOperationGetOperand(op, {4} + index);
 }
 )";
 
 const char *const variadicOperandSetterDef = R"(
-void mlir{0}{1}Set{2}(MlirOperation op, intptr_t count, MlirValue const *values) {{
+void {0}{1}{2}Set{3}(MlirOperation op, intptr_t count, MlirValue const *values) {{
   intptr_t numOperands = mlirOperationGetNumOperands(op);
-  intptr_t startIdx = {3};
+  intptr_t startIdx = {4};
   intptr_t oldCount = numOperands - startIdx;
   intptr_t newNumOperands = numOperands - oldCount + count;
   MlirValue newOperands[newNumOperands];
@@ -783,56 +790,56 @@ void mlir{0}{1}Set{2}(MlirOperation op, intptr_t count, MlirValue const *values)
 )";
 
 const char *const attributeGetterDef = R"(
-MlirAttribute mlir{0}{1}Get{2}(MlirOperation op) {{
-  return mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("{3}"));
+MlirAttribute {0}{1}{2}Get{3}(MlirOperation op) {{
+  return mlirOperationGetAttributeByName(op, mlirStringRefCreateFromCString("{4}"));
 }
 )";
 
 const char *const attributeSetterDef = R"(
-void mlir{0}{1}Set{2}(MlirOperation op, MlirAttribute attr) {{
-  mlirOperationSetAttributeByName(op, mlirStringRefCreateFromCString("{3}"), attr);
+void {0}{1}{2}Set{3}(MlirOperation op, MlirAttribute attr) {{
+  mlirOperationSetAttributeByName(op, mlirStringRefCreateFromCString("{4}"), attr);
 }
 )";
 
 const char *const resultGetterDef = R"(
-MlirValue mlir{0}{1}Get{2}(MlirOperation op) {{
-  return mlirOperationGetResult(op, {3});
+MlirValue {0}{1}{2}Get{3}(MlirOperation op) {{
+  return mlirOperationGetResult(op, {4});
 }
 )";
 
 const char *const variadicResultCountGetterDef = R"(
-intptr_t mlir{0}{1}Get{2}Count(MlirOperation op) {{
-  return {3} - {4};
+intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
+  return {4} - {5};
 }
 )";
 
 const char *const variadicResultIndexedGetterDef = R"(
-MlirValue mlir{0}{1}Get{2}(MlirOperation op, intptr_t index) {{
-  return mlirOperationGetResult(op, {3} + index);
+MlirValue {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
+  return mlirOperationGetResult(op, {4} + index);
 }
 )";
 
 const char *const regionGetterDef = R"(
-MlirRegion mlir{0}{1}Get{2}(MlirOperation op) {{
-  return mlirOperationGetRegion(op, {3});
+MlirRegion {0}{1}{2}Get{3}(MlirOperation op) {{
+  return mlirOperationGetRegion(op, {4});
 }
 )";
 
 const char *const variadicRegionCountGetterDef = R"(
-intptr_t mlir{0}{1}Get{2}Count(MlirOperation op) {{
-  return {3} - {4};
+intptr_t {0}{1}{2}Get{3}Count(MlirOperation op) {{
+  return {4} - {5};
 }
 )";
 
 const char *const variadicRegionIndexedGetterDef = R"(
-MlirRegion mlir{0}{1}Get{2}(MlirOperation op, intptr_t index) {{
-  return mlirOperationGetRegion(op, {3} + index);
+MlirRegion {0}{1}{2}Get{3}(MlirOperation op, intptr_t index) {{
+  return mlirOperationGetRegion(op, {4} + index);
 }
 )";
 
 const char *const extraMethodDef = R"(
-{0} mlir{1}{2}{3}(MlirOperation op) {{
-  {4}mlir::unwrap_cast<{5}>(op).{6}(){7};
+{0} {1}{2}{3}{4}(MlirOperation op) {{
+  {5}mlir::unwrap_cast<{6}>(op).{7}(){8};
 }
 )";
 
@@ -936,8 +943,8 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
 
     // Generate create function
     if (genCreate) {
-      os << llvm::formatv(opCreateDef, dialectName, opName, params,
-                          operationName, assignments);
+      os << llvm::formatv(opCreateDef, functionPrefix, dialectName, opName,
+                          params, operationName, assignments);
     }
 
     // Generate operand getters and setters
@@ -946,25 +953,25 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
       std::string capitalizedName = toCamelCase(operand.name);
       if (!operand.isVariadic()) {
         if (genOperandGetters)
-          os << llvm::formatv(operandGetterDef, dialectName, opName,
-                              capitalizedName, i);
+          os << llvm::formatv(operandGetterDef, functionPrefix, dialectName,
+                              opName, capitalizedName, i);
         if (genOperandSetters)
-          os << llvm::formatv(operandSetterDef, dialectName, opName,
-                              capitalizedName, i);
+          os << llvm::formatv(operandSetterDef, functionPrefix, dialectName,
+                              opName, capitalizedName, i);
       } else {
         // Calculate the start index for this variadic operand
         int startIdx = i;
 
         if (genOperandGetters) {
-          os << llvm::formatv(variadicOperandCountGetterDef, dialectName,
-                              opName, capitalizedName,
+          os << llvm::formatv(variadicOperandCountGetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName,
                               "mlirOperationGetNumOperands(op)", startIdx);
-          os << llvm::formatv(variadicOperandIndexedGetterDef, dialectName,
-                              opName, capitalizedName, startIdx);
+          os << llvm::formatv(variadicOperandIndexedGetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName, startIdx);
         }
         if (genOperandSetters) {
-          os << llvm::formatv(variadicOperandSetterDef, dialectName, opName,
-                              capitalizedName, startIdx);
+          os << llvm::formatv(variadicOperandSetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName, startIdx);
         }
       }
     }
@@ -973,11 +980,11 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
     for (const auto &namedAttr : op.getAttributes()) {
       std::string capitalizedName = toCamelCase(namedAttr.name);
       if (genAttributeGetters)
-        os << llvm::formatv(attributeGetterDef, dialectName, opName,
-                            capitalizedName, namedAttr.name);
+        os << llvm::formatv(attributeGetterDef, functionPrefix, dialectName,
+                            opName, capitalizedName, namedAttr.name);
       if (genAttributeSetters)
-        os << llvm::formatv(attributeSetterDef, dialectName, opName,
-                            capitalizedName, namedAttr.name);
+        os << llvm::formatv(attributeSetterDef, functionPrefix, dialectName,
+                            opName, capitalizedName, namedAttr.name);
     }
 
     // Generate result getters
@@ -989,17 +996,17 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
                                      : result.name.str();
         std::string capitalizedName = toCamelCase(resultName);
         if (!result.isVariadic()) {
-          os << llvm::formatv(resultGetterDef, dialectName, opName,
-                              capitalizedName, i);
+          os << llvm::formatv(resultGetterDef, functionPrefix, dialectName,
+                              opName, capitalizedName, i);
         } else {
           // Calculate the start index for this variadic result
           int startIdx = i;
 
-          os << llvm::formatv(variadicResultCountGetterDef, dialectName, opName,
-                              capitalizedName, "mlirOperationGetNumResults(op)",
-                              startIdx);
-          os << llvm::formatv(variadicResultIndexedGetterDef, dialectName,
-                              opName, capitalizedName, startIdx);
+          os << llvm::formatv(variadicResultCountGetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName,
+                              "mlirOperationGetNumResults(op)", startIdx);
+          os << llvm::formatv(variadicResultIndexedGetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName, startIdx);
         }
       }
     }
@@ -1013,17 +1020,17 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
                                      : region.name.str();
         std::string capitalizedName = toCamelCase(regionName);
         if (!region.isVariadic()) {
-          os << llvm::formatv(regionGetterDef, dialectName, opName,
-                              capitalizedName, i);
+          os << llvm::formatv(regionGetterDef, functionPrefix, dialectName,
+                              opName, capitalizedName, i);
         } else {
           // Calculate the start index for this variadic region
           int startIdx = i;
 
-          os << llvm::formatv(variadicRegionCountGetterDef, dialectName, opName,
-                              capitalizedName, "mlirOperationGetNumRegions(op)",
-                              startIdx);
-          os << llvm::formatv(variadicRegionIndexedGetterDef, dialectName,
-                              opName, capitalizedName, startIdx);
+          os << llvm::formatv(variadicRegionCountGetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName,
+                              "mlirOperationGetNumRegions(op)", startIdx);
+          os << llvm::formatv(variadicRegionIndexedGetterDef, functionPrefix,
+                              dialectName, opName, capitalizedName, startIdx);
         }
       }
     }
@@ -1072,13 +1079,14 @@ static bool emitOpCAPIImpl(const llvm::RecordKeeper &records, raw_ostream &os) {
           // Generate implementation
           os << llvm::formatv(extraMethodDef,
                               capiReturnType,        // {0}
-                              dialectName,           // {1}
-                              opName,                // {2}
-                              capitalizedMethodName, // {3}
-                              returnPrefix,          // {4}
-                              opName,                // {5}
-                              method.methodName,     // {6}
-                              returnSuffix);         // {7}
+                              functionPrefix,        // {1}
+                              dialectName,           // {2}
+                              opName,                // {3}
+                              capitalizedMethodName, // {4}
+                              returnPrefix,          // {5}
+                              opName,                // {6}
+                              method.methodName,     // {7}
+                              returnSuffix);         // {8}
         }
       }
     }
